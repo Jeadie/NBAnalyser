@@ -1,0 +1,2 @@
+class GameSetScrapper(object): 
+	pass

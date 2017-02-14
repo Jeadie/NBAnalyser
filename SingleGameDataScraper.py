@@ -5,10 +5,14 @@ class SingleGameDataScraper(object):
         self.home = home
         self.away = away
         self.date = date
+        self.dataFields = ['mp', 'fg', 'fga', 'fg3', 'fg3a', 'ft', 'fta',
+                           'orb', 'drb', 'ast', 'stl', 'blk', 'tov',
+                           'pf', 'pts', 'plus_minus']
         self.win = self.winner()
 
     def winner(self):
         return True
+        
     def basicTableText(self, text, team):
         box_basic_index = text.find(self.basicTableID(team)) # id= box_lac_basic
         start = text.find("<tr>", box_basic_index)
@@ -41,17 +45,11 @@ class SingleGameDataScraper(object):
             return
 
         else:
-            dataFields = ['mp', 'fg', 'fga', 'fg3', 'fg3a', 'ft', 'fta',
-                           'orb', 'drb', 'ast', 'stl', 'blk', 'tov',
-                           'pf', 'pts', 'plus_minus']
             dataDict = {'opp': self.home if team == self.away else self.away}
-            for field in dataFields:
+            for field in self.dataFields:
                 dataDict[field] = self.insideValue(data, 'data-stat="' + field)
                 
             return [name, dataDict]
-
-        
-
 
     def PlayerData(self, boxScore, team):
         boxScoreList = []
@@ -68,12 +66,10 @@ class SingleGameDataScraper(object):
 
         return boxScoreList
 
-
     def TeamData(self, boxScore, team):
         teamIndex = boxScore.rfind(">Team Totals")
         singleEndIndex = boxScore.find("</tr>", teamIndex) -1
         teamData = boxScore[teamIndex-1: singleEndIndex]
-
         return self.statLineData(teamData, team)
 
     def bodyHtml(self):
@@ -86,11 +82,6 @@ class SingleGameDataScraper(object):
         homeTeamBoxScore = self.basicTableText(html, self.home)
         awayTeamBoxScore = self.basicTableText(html, self.away)
         
-##        homePlayerData= self.PlayerData(homeTeamBoxScore, self.home)
-##        homeTeamData = self.TeamData(homeTeamBoxScore)
-##        awayPlayerData= self.PlayerData(awayTeamBoxScore, self.away)
-##        awayTeamData = self.PlayerData(awayTeamBoxScore)
-
         return {'homePlayerData': self.PlayerData(homeTeamBoxScore, self.home),
                 'homeTeamData': self.TeamData(homeTeamBoxScore, self.home),
                 'awayPlayerData': self.PlayerData(awayTeamBoxScore, self.away),
