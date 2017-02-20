@@ -1,17 +1,27 @@
-import urllib.request as url
 class SingleGameDataScraper(object):
+    DATAFIELDS = ['mp', 'fg', 'fga', 'fg3', 'fg3a', 'ft', 'fta',
+                  'orb', 'drb', 'ast', 'stl', 'blk', 'tov',
+                  'pf', 'pts', 'plus_minus']
+    def __init__ (self, link):
+        self.link =link
+        self.html = HTMLParser.parse(link)
+        self.home, self.away, self.date, self.homewin = self.initaliseGame()
 
-    def __init__ (self, home, away, date):
-        self.home = home
-        self.away = away
-        self.date = date
-        self.dataFields = ['mp', 'fg', 'fga', 'fg3', 'fg3a', 'ft', 'fta',
-                           'orb', 'drb', 'ast', 'stl', 'blk', 'tov',
-                           'pf', 'pts', 'plus_minus']
-        self.win = self.winner()
+    def initialiseGame(self):
+        home, away= self.teams()
+        date = self.link[-17:-9]
+        win = self.homeWin()
+        return home, away, date, win
 
-    def winner(self):
-        return True
+    def homeWin(self):
+        home = self.link(-8: -5)
+        loserStart = self.html.find("<a", self.html.find("loser"))
+        loserEnd = self.html.find("</a>", loserStart)
+        loserTeam = self.insideValue(self.html[loserStart + 1: loserEnd +1], '')
+        if home == loserTeam:
+            return False
+        else:
+            return True
         
     def basicTableText(self, text, team):
         box_basic_index = text.find(self.basicTableID(team)) # id= box_lac_basic
@@ -21,17 +31,6 @@ class SingleGameDataScraper(object):
 
     def basicTableID(self, team): 
         return 'box_' + str(team).lower() + '_basic'
-
-
-    def RawtoCleanHTML(self, text):
-        remove_list= ["\\n", "  ", "\\r", "\\t"]
-        new_text= text
-        for i in remove_list:
-            new_text = new_text.replace(i, "")
-        return new_text
-
-    def boxScoreLink(self):
-        return 'http://www.basketball-reference.com/boxscores/'+ self.date+ "0" + self.home + '.html'
 
     def insideValue(self, text, value):
         start = text.find(">", text.find(value))
@@ -46,7 +45,7 @@ class SingleGameDataScraper(object):
 
         else:
             dataDict = {'opp': self.home if team == self.away else self.away}
-            for field in self.dataFields:
+            for field in DATAFIELDS:
                 dataDict[field] = self.insideValue(data, 'data-stat="' + field)
                 
             return [name, dataDict]
@@ -72,15 +71,9 @@ class SingleGameDataScraper(object):
         teamData = boxScore[teamIndex-1: singleEndIndex]
         return self.statLineData(teamData, team)
 
-    def bodyHtml(self):
-        response = url.urlopen(self.boxScoreLink())
-        html = self.RawtoCleanHTML(str(response.read()))
-        return html[html.find("<body"): html.find("</body>")]
-        
     def generate(self):
-        html= self.bodyHtml()
-        homeTeamBoxScore = self.basicTableText(html, self.home)
-        awayTeamBoxScore = self.basicTableText(html, self.away)
+        homeTeamBoxScore = self.basicTableText(self.html, self.home)
+        awayTeamBoxScore = self.basicTableText(self.html, self.away)
         
         return {'homePlayerData': self.PlayerData(homeTeamBoxScore, self.home),
                 'homeTeamData': self.TeamData(homeTeamBoxScore, self.home),
