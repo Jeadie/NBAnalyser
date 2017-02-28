@@ -1,0 +1,2 @@
+class GameDatabaseInterface(object): 
+	pass
