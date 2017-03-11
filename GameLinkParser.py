@@ -9,6 +9,8 @@ class GameLinkParser(object):
 				   5: 31, 6: 30, 7: 31, 8: 31, 9: 30,
 				   10: 31, 11: 30, 12: 31}
 
+	MONTHSWITHNOGAMES = [7,8,9]
+
 	def __init__(self, startdate, enddate, teams=[]):
 		self.startDate = startdate
 		self.endDate = enddate
@@ -31,36 +33,45 @@ class GameLinkParser(object):
 
 		else:
 			games.extend(self.scrapePartialMonth(self.startDate,
-												 firstYear + firstMonth + str(GameLinkParser.DAYSINMONTH[int(firstMonth)])))
+												 firstYear + firstMonth + str(
+													 GameLinkParser.DAYSINMONTH[int(firstMonth)])))
 			games.extend(self.scrapePartialMonth(lastYear + lastMonth + "01", self.endDate))
 
 			for month in self.fullMonthsToScrape():
 				games.extend(self.scrapeMonth(month))
-				print(games)
+
+		games = list(filter(None, games))
 		return games
 
 	def fullMonthsToScrape(self):
 		firstYear, firstMonth, firstDay = self.dateSplit(self.startDate)
 		lastYear, lastMonth, lastDay = self.dateSplit(self.endDate)
 		monthsToScrape = []
-		print(firstYear + "_" + lastYear)
 		if firstYear == lastYear:
 			for month in range(int(firstMonth) + 1, int(lastMonth)):
-				monthsToScrape.append(firstYear + self.numToMonth(month) + "01")
+				if month not in self.MONTHSWITHNOGAMES:
+					monthsToScrape.append(firstYear + self.numToMonth(month) + "01")
 		else:
 			for month in range(int(firstMonth) + 1, 12 + 1):
-				monthsToScrape.append(firstYear + self.numToMonth(month) + "01")
+				if month not in self.MONTHSWITHNOGAMES:
+					#print("month" + str(month) + "year" + firstYear)
+					monthsToScrape.append(firstYear + self.numToMonth(month) + "01")
 
 			for month in range(1, int(lastMonth)):
-				monthsToScrape.append(firstYear + self.numToMonth(month) + "01")
+				if month not in self.MONTHSWITHNOGAMES:
+					#print("month" + str(month) + "year" + lastYear)
+					monthsToScrape.append(lastYear + self.numToMonth(month) + "01")
 
 			for year in range(int(firstYear) + 1, int(lastYear)):
-				for month in range(0, 12):
-					monthsToScrape.append(str(year) + self.numToMonth(month) + "01")
+				for month in range(1, 13):
+					if month not in self.MONTHSWITHNOGAMES:
+						#print("month" + str(month) + "year" + str(year))
+						monthsToScrape.append(str(year) + self.numToMonth(month) + "01")
 		return list(set(monthsToScrape))
 
 	def scrapePartialMonth(self, start, end):
 		result = []
+		#print("Start: " + start + " and End: " + end)
 		table = self.gameTableMonth(start, end)
 		while table.find("</tr>") != -1:
 			trStart = table.find("<tr")
@@ -68,6 +79,7 @@ class GameLinkParser(object):
 			tableRow = table[trStart: trEnd]
 			result.append(self.gameLink(tableRow))
 			table = table[trEnd:]
+		result = list(filter(None, result))
 		return result
 
 	def scrapeMonth(self, startDay):
@@ -76,12 +88,18 @@ class GameLinkParser(object):
 		lastDay = startYear + startMonth + endDate
 		return self.scrapePartialMonth(startDay, lastDay)
 
-	def gameTableMonth(self, start, end):  ## TODO: cut table to between dates
+	def gameTableMonth(self, start, end):
 		body = HTMLParser.parse(self.linkForMonth(start))
 		firstGame = body.find('csk="' + start)
-		tableStart = body.rfind("<tr", 0, firstGame)
+		if firstGame == -1:
+			tableStart = body.find("<tr", body.find('Date'))
+		else:
+			tableStart = body.rfind("<tr", 0, firstGame)
 		lastGame = body.rfind('csk="' + end)
-		tableEnd = body.find("</tr>", lastGame) +5
+		if lastGame == -1:
+			tableEnd = body.rfind("</tr>", firstGame, body.find("</tbody>", firstGame))
+		else:
+			tableEnd = body.find("</tr>", lastGame) + 5
 		return body[tableStart:tableEnd]
 
 	def gameLink(self, row):  # csk="201311010ATL"
@@ -94,13 +112,13 @@ class GameLinkParser(object):
 		if len(self.teams) == 0:
 			return True
 		else:
-			team1, team2 = teams(row)
+			team1, team2 = self.teamsFromRow(row)
 
 			if (team1 in self.teams) or (team2 in self.teams):
 				return True
 			return False
 
-	def teams(self, row):  # href="/teams/ATL/2014.html" and href="/teams/TOR/2014.html"
+	def teamsFromRow(self, row):  # href="/teams/ATL/2014.html" and href="/teams/TOR/2014.html"
 		teamIndex1 = row.find("teams/") + 6
 		teamIndex2 = row.rfind("teams/") + 6
 		team1 = row[teamIndex1: teamIndex1 + 3]
@@ -114,6 +132,8 @@ class GameLinkParser(object):
 	def linkForMonth(self, date):
 		year = date[:4]
 		month = date[4:6]
+		if int(month) > 9:
+			year = str(int(year) + 1)
 		return "http://www.basketball-reference.com/leagues/NBA_{0}_games-{1}.html". \
 			format(year, GameLinkParser.DATE[int(month)])
 
@@ -127,11 +147,17 @@ class GameLinkParser(object):
 		else:
 			return "0{0}".format(str(month))
 
-def main():
-	links = GameLinkParser.getLinks("20170103", "20170103")
-	print(links)
-	print (len(links))
 
+def main():
+	links = GameLinkParser.getLinks("20170104", "20170130", ["MEM"])
+	#links1 = GameLinkParser.getLinks("20170104", "20170130", ["MEM", "MIA"])
+
+	print (links)
+	print(len(links))
+
+
+	#print(links1)
+	#print(len(links1))
 
 if __name__ == '__main__':
 	main()

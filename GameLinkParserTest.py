@@ -1,30 +1,26 @@
 from HTMLParser import *
 from GameLinkParser import *
 import unittest
-
+from GameLinkParserTestConstants import *
 
 class GameLinkParserTest(unittest.TestCase):
-    def setUp(self):
-        "http://www.basketball-reference.com/boxscores/{0}0{1}.html". \
-            format(date, homeTeam)
+    def testgamesForOneDay(self):
+        self.assertEqual(GameLinkParser.getLinks("20170103", "20170103"), ONEDAY, msg = "Gets links for one day" )
 
-    def gamesForOneDay(self):
-        self.assertequal(GameLinkParser.getLinks("20170103", "20170103"), LINKSFORONEGAME, msg = "Gets links for one day" )
+    def testgamesWithinOneMonth(self): #None
+        self.assertCountEqual(GameLinkParser.getLinks("20170103", "20170130"), LESSONEMONTH, msg = "Gets links for one month")
 
-    def gamesWithinOneMonth(self):
-        self.assertEqual(GameLinkParser.getLinks("20170103", "20170203"), LINKSFORONEMONTH, msg = "Gets links for one month")
+    def testgamesForSelectedTeam(self):
+        self.assertEqual(GameLinkParser.getLinks("20170104", "20170130", ["MEM"]), SELECTEDTEAM, msg = "Gets links for one team")
 
-    def gamesForSelectedTeam(self):
-        pass
+    def testgamesForSelectedTeams(self): #None
+        self.assertCountEqual(GameLinkParser.getLinks("20170104", "20170130", ["MEM", "MIA"]), SELECTEDTEAMS, msg = "Gets links for teams")
 
-    def gamesForSelectedTeams(self):
-        pass
+    def testgamesForMultipleMonths(self): #None
+        self.assertCountEqual(GameLinkParser.getLinks("20131004", "20140416", ["MEM"]), MULTIPLEMONTHS, msg = "Gets links for multiple months" )
 
-    def gamesForMultipleMonths(self):
-        pass
-
-    def gamesForMultipleYears(self):
-        pass
+    # def gamesForMultipleYears(self):
+    #     pass
 
 
 if __name__ == '__main__':
