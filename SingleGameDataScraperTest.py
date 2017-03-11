@@ -14,7 +14,7 @@ class SingleGameDataScraper(object):
         return {'homePlayerData': self.PlayerData(homeTeamBoxScore, self.home),
                 'homeTeamData': self.TeamData(homeTeamBoxScore, self.home),
                 'awayPlayerData': self.PlayerData(awayTeamBoxScore, self.away),
-                'awayTeamData': self.PlayerData(awayTeamBoxScore, self.away)
+                'awayTeamData': self.TeamData(awayTeamBoxScore, self.away)
                 }
 
     ### Private Methods ###
@@ -82,12 +82,3 @@ class SingleGameDataScraper(object):
         teamData = boxScore[teamIndex-1: singleEndIndex]
         return self.statLineData(teamData, team)
 
-    def generate(self):
-        homeTeamBoxScore = self.basicTableText(self.html, self.home)
-        awayTeamBoxScore = self.basicTableText(self.html, self.away)
-        
-        return {'homePlayerData': self.PlayerData(homeTeamBoxScore, self.home),
-                'homeTeamData': self.TeamData(homeTeamBoxScore, self.home),
-                'awayPlayerData': self.PlayerData(awayTeamBoxScore, self.away),
-                'awayTeamData': self.PlayerData(awayTeamBoxScore, self.away)
-                }

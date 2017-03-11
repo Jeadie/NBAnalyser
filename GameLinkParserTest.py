@@ -1,4 +1,3 @@
-from HTMLParser import *
 from GameLinkParser import *
 import unittest
 from GameLinkParserTestConstants import *

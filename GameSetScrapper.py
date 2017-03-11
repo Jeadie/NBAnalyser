@@ -1,4 +1,5 @@
 from GameLinkParser import *
+from SingleGameDataScraper import *
 
 class GameSetScrapper(object):
     DATE = {1: "january", 2: "february", 3: "march", 4: "april",
@@ -10,7 +11,7 @@ class GameSetScrapper(object):
 
     def __init__(self, startdate, enddate, teams=[]):
         self.gameLinks = GameLinkParser.getLinks(startdate, enddate, teams)
-        self.gameData = []
+        self.gameData = self.getGameData()
 
     @classmethod
     def all(cls, startDate, endDate):
@@ -31,15 +32,15 @@ class GameSetScrapper(object):
         return cls(startDate, endDate)
 
     def getGameData(self):
+        gameData = []
         for link in self.gameLinks:
-            self.gameData.extend(SingleGameDataScrapper(link).generate())
-        return self.gameData
-
-    ### Private Methods ###
+            print (link)
+            gameData.append(SingleGameDataScraper(link).generate())
+        return gameData
 
 def main():
-    scrapper = GameSetScrapper.all("20170225", "20170226")
-    print (len(scrapper.gameLinks))
-
+    Games = GameSetScrapper.all("20170104", "20170106")
+    print(len(Games.gameData))
+    print (Games.gameData)
 if __name__ == '__main__':
     main()

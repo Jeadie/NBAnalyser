@@ -8,9 +8,6 @@ EXPECTED_RESULT = '<body class="ancillary"><header><h2 class="ancillary">Search 
 '<li class="parent"><a href="index.html" class="main">Random</a></li><li class="child">Search</li>'\
         '</ol></footer></body>'
 
-
-
-
 class HTMLParserTest(unittest.TestCase):
     def setUp(self):
         self.HTMLParser = HTMLParser().parse(LINK)
