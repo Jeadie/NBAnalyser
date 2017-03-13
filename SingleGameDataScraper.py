@@ -4,7 +4,11 @@ from HTMLParser import *
 class SingleGameDataScraper(object):
     DATAFIELDS = ['mp', 'fg', 'fga', 'fg3', 'fg3a', 'ft', 'fta',
                   'orb', 'drb', 'ast', 'stl', 'blk', 'tov',
-                  'pf', 'pts', 'plus_minus']
+                  'pf', 'plus_minus']
+
+    TEAMFIELDS = ['fg', 'fga', 'fg3', 'fg3a', 'ft', 'fta',
+                  'orb', 'drb', 'ast', 'stl', 'blk', 'tov',
+                  'pf']
 
     def __init__(self, link):
         self.link = link
@@ -18,7 +22,7 @@ class SingleGameDataScraper(object):
         return {'homePlayerData': self.PlayerData(homeTeamBoxScore, self.home),
                 'homeTeamData': self.TeamData(homeTeamBoxScore, self.home),
                 'awayPlayerData': self.PlayerData(awayTeamBoxScore, self.away),
-                'awayTeamData': self.PlayerData(awayTeamBoxScore, self.away)
+                'awayTeamData': self.TeamData(awayTeamBoxScore, self.away)
                 }
 
     ### Private Methods ###
@@ -55,18 +59,24 @@ class SingleGameDataScraper(object):
         end = text.find("<", start)
         return text[start + 1: end]
 
-    def statLineData(self, data, team):
+    def statLineData(self, data, team, player):
         name = self.insideValue(data, '')
 
         if data.count("Did Not") == 1:
             return
 
         else:
-            dataDict = {'opp': self.home if team == self.away else self.away}
-            for field in self.DATAFIELDS:
-                dataDict[field] = self.insideValue(data, 'data-stat="' + field)
+            dataDict = {} #{'opp': self.home if team == self.away else self.away}
+            dataDict['name'] = name
+            if player:
+                for field in self.DATAFIELDS:
+                    dataDict[field] = self.insideValue(data, 'data-stat="' + field)
 
-            return [name, dataDict]
+            else:
+                for field in self.TEAMFIELDS:
+                    dataDict[field] = self.insideValue(data, 'data-stat="' + field)
+
+            return dataDict
 
     def PlayerData(self, boxScore, team):
         boxScoreList = []
@@ -75,7 +85,7 @@ class SingleGameDataScraper(object):
             dataIndex = boxScore.find("<td", firstLink)
             endIndex = boxScore.find("</tr>", firstLink) - 1
             playerData = boxScore[firstLink: endIndex]
-            boxScoreList.append(self.statLineData(playerData, team))
+            boxScoreList.append(self.statLineData(playerData, team, True))
             boxScore = boxScore[endIndex + 1:]
         for i in boxScoreList:
             if i == None:
@@ -86,6 +96,8 @@ class SingleGameDataScraper(object):
     def TeamData(self, boxScore, team):
         teamIndex = boxScore.rfind(">Team Totals")
         singleEndIndex = boxScore.find("</tr>", teamIndex) - 1
-        teamData = boxScore[teamIndex - 1: singleEndIndex]
-        return self.statLineData(teamData, team)
+        teamData = boxScore[teamIndex + 1: singleEndIndex]
+        teamLine = self.statLineData(teamData, team, False)
+        del teamLine["name"]
+        return teamLine
 

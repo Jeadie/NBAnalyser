@@ -41,6 +41,6 @@ class GameSetScrapper(object):
 def main():
     Games = GameSetScrapper.all("20170104", "20170106")
     print(len(Games.gameData))
-    print (Games.gameData)
+    print (Games.gameData[0]["awayTeamData"])
 if __name__ == '__main__':
     main()
